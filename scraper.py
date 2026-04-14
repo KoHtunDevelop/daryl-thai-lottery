@@ -6,7 +6,7 @@ from firebase_admin import credentials, firestore
 import time
 
 # =========================
-# 🔥 Firebase INIT (SAFE)
+# 🔥 Firebase INIT
 # =========================
 try:
     cred = credentials.Certificate("firebase_key.json")
@@ -16,6 +16,19 @@ except Exception as e:
     print("❌ Firebase init error:", e)
 
 db = firestore.client()
+
+# =========================
+# 🧪 TEST FIREBASE WRITE
+# =========================
+print("🔥 TEST FIREBASE CONNECTION")
+
+try:
+    test_ref = db.collection("test").document("ping")
+    test_ref.set({"status": "ok"})
+    print("✅ Firestore WRITE SUCCESS")
+except Exception as e:
+    print("❌ Firestore WRITE FAILED:", e)
+
 
 BASE_URL = "https://news.sanook.com"
 
@@ -56,7 +69,7 @@ def parse_date(title):
     if not month:
         return None
 
-    return f"{year}-{month}-{int(day):02d}"  # ISO format
+    return f"{year}-{month}-{int(day):02d}"
 
 
 # =========================
@@ -100,12 +113,12 @@ def parse_detail(url):
 
 
 # =========================
-# 🔗 Get Links
+# 🔗 Get Links (Latest + History)
 # =========================
 def get_links():
     links = []
 
-    for page in range(1, 5):
+    for page in range(1, 6):  # 🔥 increase pages for history
         url = f"{BASE_URL}/lotto/archive/page/{page}/"
         res = requests.get(url, headers=HEADERS)
         soup = BeautifulSoup(res.text, "html.parser")
@@ -117,7 +130,7 @@ def get_links():
             if "/lotto/check/" in href and "ตรวจหวย" in text:
                 links.append(href)
 
-        print(f"Page {page} scanned")
+        print(f"📄 Page {page} scanned")
 
     return list(set(links))
 
@@ -131,7 +144,7 @@ def upload_to_firestore(data):
     try:
         doc_ref = db.collection("lotto").document(date)
 
-        # 🔥 check duplicate
+        # 🔥 Skip duplicate
         if doc_ref.get().exists:
             print(f"⏩ Skip duplicate: {date}")
             return
