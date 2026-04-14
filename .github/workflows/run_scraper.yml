@@ -19,12 +19,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # ✅ IMPORTANT: create key BEFORE running python
       - name: Create Firebase key file
         run: |
           echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
-
-      - name: Debug file
-        run: ls -la
 
       - name: Run scraper
         run: python scraper.py
