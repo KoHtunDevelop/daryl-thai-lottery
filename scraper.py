@@ -4,6 +4,9 @@ BASE_LIST = "https://lotto.api.rayriffy.com/list/"
 BASE_DETAIL = "https://lotto.api.rayriffy.com/lotto/"
 
 def transform_lotto_data(raw):
+    if not isinstance(raw, dict):
+        return []
+
     result = []
     date = raw.get("date", "")  # ✅ Thai 그대로
 
