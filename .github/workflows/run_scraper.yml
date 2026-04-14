@@ -27,4 +27,4 @@ jobs:
         run: ls -la
 
       - name: Run scraper
-        run: python scraper.py
+        run: python upload_lotto.py
