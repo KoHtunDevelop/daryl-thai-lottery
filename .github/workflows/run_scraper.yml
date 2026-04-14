@@ -3,7 +3,7 @@ name: Lotto Scraper
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * * Pre"
 
 jobs:
   scrape:
@@ -16,14 +16,16 @@ jobs:
         with:
           python-version: "3.10"
 
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      # ✅ create key FIRST
+      # Firebase key ကို အရင်ဆောက်ပါ
       - name: Create Firebase key file
         run: |
           echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
 
-      - run: python scraper.py
+      - name: Run Scraper
+        run: python scraper.py
 
       - name: Commit JSON
         run: |
@@ -32,3 +34,4 @@ jobs:
           git add lotto.json
           git commit -m "update lotto data" || echo "no changes"
           git push
+          
