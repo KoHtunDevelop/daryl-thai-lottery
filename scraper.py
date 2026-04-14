@@ -1,6 +1,17 @@
 import re
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
+import firebase_admin
+from firebase_admin import credentials, firestore
+import time
+
+# ✅ Firebase init
+cred = credentials.Certificate("firebase_key.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+BASE_URL = "https://news.sanook.com"
+
 
 def parse_detail(url):
     res = requests.get(url)
@@ -17,7 +28,6 @@ def parse_detail(url):
         month_th = date_match.group(2)
         year_th = date_match.group(3)
 
-        # Thai → English month map
         months = {
             "มกราคม": "Jan",
             "กุมภาพันธ์": "Feb",
@@ -38,7 +48,7 @@ def parse_detail(url):
 
         data["date"] = f"{int(day):02d}-{month}-{year}"
 
-    # ✅ Extract prize table
+    # ✅ Extract prizes
     prizes = {}
 
     table = soup.find("table")
@@ -51,7 +61,6 @@ def parse_detail(url):
                 prize_name = cols[0].get_text(strip=True)
                 numbers = cols[1].get_text(strip=True)
 
-                # clean numbers
                 nums = re.findall(r"\d+", numbers)
 
                 prizes[prize_name] = nums
@@ -60,3 +69,48 @@ def parse_detail(url):
     data["url"] = url
 
     return data
+
+
+def get_links():
+    links = []
+
+    for page in range(1, 5):
+        url = f"{BASE_URL}/lotto/archive/page/{page}/"
+        res = requests.get(url)
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            text = a.get_text(strip=True)
+
+            if "/lotto/check/" in href and "ตรวจหวย" in text:
+                links.append(href)
+
+    return list(set(links))
+
+
+def upload_to_firestore(data):
+    date = data.get("date")
+
+    if not date:
+        return
+
+    db.collection("lotto").document(date).set(data)
+    print(f"Uploaded: {date}")
+
+
+def main():
+    links = get_links()
+    print(f"Total links: {len(links)}")
+
+    for link in links:
+        try:
+            data = parse_detail(link)
+            upload_to_firestore(data)
+            time.sleep(1)
+        except Exception as e:
+            print("Error:", e)
+
+
+if __name__ == "__main__":
+    main()
