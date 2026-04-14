@@ -18,6 +18,11 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      # ✅ create key FIRST
+      - name: Create Firebase key file
+        run: |
+          echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
+
       - run: python scraper.py
 
       - name: Commit JSON
@@ -27,8 +32,3 @@ jobs:
           git add lotto.json
           git commit -m "update lotto data" || echo "no changes"
           git push
-
-      # ✅ IMPORTANT: create key BEFORE running python
-      - name: Create Firebase key file
-        run: |
-          echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
