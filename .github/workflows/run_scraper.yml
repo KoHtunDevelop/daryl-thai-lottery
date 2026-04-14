@@ -34,4 +34,3 @@ jobs:
           git add lotto.json
           git commit -m "update lotto data" || echo "no changes"
           git push
-          
