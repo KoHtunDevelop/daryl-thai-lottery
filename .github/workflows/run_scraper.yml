@@ -1,7 +1,9 @@
-name: Update Lottery Data
+name: Lotto Scraper
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   scrape:
