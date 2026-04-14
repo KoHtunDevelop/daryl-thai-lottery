@@ -8,7 +8,7 @@ def transform_lotto_data(raw):
         return []
 
     result = []
-    date = raw.get("date", "")  # ✅ Thai 그대로
+    date = raw.get("date", "")
 
     prizes = raw.get("prizes", {})
 
@@ -63,8 +63,18 @@ def fetch_all_data():
     for page in range(1, 100):
         print(f"Fetching page {page}...")
 
-        res = requests.get(f"{BASE_LIST}{page}")
-        data = res.json()
+        # ✅ LIST request (with timeout + safe json)
+        try:
+            res = requests.get(f"{BASE_LIST}{page}", timeout=10)
+
+            if res.status_code != 200:
+                print(f"❌ Failed page {page}")
+                continue
+
+            data = res.json()
+        except Exception as e:
+            print(f"❌ Error fetching page {page}: {e}")
+            continue
 
         if not data.get("response"):
             break
@@ -72,12 +82,23 @@ def fetch_all_data():
         for item in data["response"]:
             lotto_id = item["id"]
 
-            detail_res = requests.get(f"{BASE_DETAIL}{lotto_id}")
-            detail = detail_res.json()
+            # ✅ DETAIL request (with all protections)
+            try:
+                detail_res = requests.get(f"{BASE_DETAIL}{lotto_id}", timeout=10)
+
+                if detail_res.status_code != 200:
+                    print(f"❌ Failed detail {lotto_id}")
+                    continue
+
+                detail = detail_res.json()
+
+            except Exception as e:
+                print(f"❌ Error detail {lotto_id}: {e}")
+                continue
 
             raw = detail.get("response", {})
 
-            # ✅ FIX HERE
+            # ✅ Skip invalid
             if not isinstance(raw, dict):
                 print(f"⚠️ Skipping invalid data for id {lotto_id}")
                 continue
@@ -86,3 +107,16 @@ def fetch_all_data():
             all_results.extend(transformed)
 
     return all_results
+
+
+if __name__ == "__main__":
+    data = fetch_all_data()
+
+    print(f"Total records: {len(data)}")
+
+    # Save JSON (Thai safe)
+    import json
+    with open("lotto.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    print("✅ Saved to lotto.json")
