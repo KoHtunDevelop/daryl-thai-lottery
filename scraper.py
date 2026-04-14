@@ -57,7 +57,7 @@ def transform_lotto_data(raw):
 def fetch_all_data():
     all_results = []
 
-    for page in range(1, 100):  # adjust if needed
+    for page in range(1, 100):
         print(f"Fetching page {page}...")
 
         res = requests.get(f"{BASE_LIST}{page}")
@@ -74,20 +74,12 @@ def fetch_all_data():
 
             raw = detail.get("response", {})
 
+            # ✅ FIX HERE
+            if not isinstance(raw, dict):
+                print(f"⚠️ Skipping invalid data for id {lotto_id}")
+                continue
+
             transformed = transform_lotto_data(raw)
             all_results.extend(transformed)
 
     return all_results
-
-
-if __name__ == "__main__":
-    data = fetch_all_data()
-
-    print(f"Total records: {len(data)}")
-
-    # Save to JSON
-    import json
-    with open("lotto.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-    print("✅ Saved to lotto.json")
