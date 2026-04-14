@@ -25,7 +25,7 @@ jobs:
           echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
 
       - name: Run Scraper
-        run: python test.py
+        run: python scrapy.py
 
       - name: Commit and Push Changes
         run: |
