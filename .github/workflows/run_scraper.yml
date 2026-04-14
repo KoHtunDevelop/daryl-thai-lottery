@@ -16,17 +16,13 @@ jobs:
         with:
           python-version: "3.10"
 
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - run: python scraper.py
-
-      - name: Commit JSON
-        run: |
-          git config --global user.name "bot"
-          git config --global user.email "bot@example.com"
-          git add lotto.json
-          git commit -m "update lotto data" || echo "no changes"
-          git push
+      # ✅ IMPORTANT: create key BEFORE running python
       - name: Create Firebase key file
         run: |
-         echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
+          echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
+
+      - name: Run scraper
+        run: python scraper.py
