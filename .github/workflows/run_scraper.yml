@@ -1,0 +1,33 @@
+name: Update Lottery Data
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # မြန်မာစံတော်ချိန် ညနေဘက်ဆိုရင် အလိုအလျောက် run မယ်
+  workflow_dispatch: # ကိုယ့်ဘာသာ manual ခလုတ်နှိပ်ပြီး run လို့ရအောင်
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run scraper
+        run: python scraper.py
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add lotto.json
+          git commit -m "Update lotto data" || exit 0
+          git push
+          
