@@ -5,132 +5,97 @@ import time
 import re
 
 BASE_URL = "https://news.sanook.com"
-
 headers = {
-    "User-Agent": "Mozilla/5.0"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
-
 
 def get_links():
     links = []
-
-    for page in range(1, 5):
+    # စမ်းသပ်ရန် page 1-2 လောက်ပဲ အရင်ယူကြည့်ပါ (နောက်မှ တိုးလို့ရပါတယ်)
+    for page in range(1, 3):
         url = f"{BASE_URL}/lotto/archive/page/{page}/"
-        res = requests.get(url, headers=headers)
-        soup = BeautifulSoup(res.text, "html.parser")
-
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            text = a.get_text(strip=True)
-
-            if "/lotto/" in href and "ตรวจหวย" in text:
-                links.append(href)
-
+        try:
+            res = requests.get(url, headers=headers)
+            soup = BeautifulSoup(res.text, "html.parser")
+            for a in soup.find_all("a", href=True):
+                href = a["href"]
+                text = a.get_text(strip=True)
+                if "/lotto/check/" in href and "ตรวจหวย" in text:
+                    links.append(href)
+        except Exception as e:
+            print(f"Error fetching links: {e}")
     return list(set(links))
-
-
-def clean_number(text):
-    return re.findall(r"\d+", text)
-
-
-def extract_date(soup):
-    title = soup.find("h1")
-    if title:
-        text = title.get_text()
-        match = re.search(r"([A-Za-z]+ \d{1,2}, \d{4})", text)
-        if match:
-            return match.group(1).replace(" ", "-").replace(",", "")
-    return ""
-
 
 def parse_detail(url):
     res = requests.get(url, headers=headers)
     soup = BeautifulSoup(res.text, "html.parser")
+    
+    # ရက်စွဲကို Title ထဲကနေ ယူတာ (ဥပမာ: 1 มีนาคม 2567)
+    title_text = soup.find("title").text if soup.title else ""
+    date_match = re.search(r"(\d+\s+\w+\s+\d+)", title_text)
+    formatted_date = date_match.group(1) if date_match else "Unknown Date"
 
-    date = extract_date(soup)
+    prizes_data = []
 
-    results = []
+    # Sanook ရဲ့ structural class တွေကို သုံးပြီး ဆွဲထုတ်ခြင်း
+    sections = [
+        {"name": "First Prize", "class": "lotto__number--p1"},
+        {"name": "Front 3 Digits", "class": "lotto__number--p2"},
+        {"name": "Last 3 Digits", "class": "lotto__number--p3"},
+        {"name": "Last 2 Digits", "class": "lotto__number--p4"}
+    ]
 
-    # 🔴 First Prize
-    first = soup.find("h2")
-    if first:
-        nums = clean_number(first.get_text())
-        if nums:
-            results.append({
-                "date": date,
-                "ticket_no": nums[0],
-                "prize_name": "First Prize"
-            })
+    for section in sections:
+        tags = soup.find_all("strong", class_=section["class"])
+        for tag in tags:
+            ticket_no = tag.get_text(strip=True)
+            if ticket_no:
+                prizes_data.append({
+                    "date": formatted_date,
+                    "ticket_no": ticket_no,
+                    "prize_name": section["name"]
+                })
 
-    # 🔴 3 digits (หน้า 3 ตัว)
-    for tag in soup.find_all(string=re.compile("3 ตัวหน้า")):
-        parent = tag.find_parent()
-        nums = clean_number(parent.get_text())
-        for n in nums:
-            results.append({
-                "date": date,
-                "ticket_no": n,
-                "prize_name": "Front 3 digits"
-            })
+    # တခြားဆုများ (2nd, 3rd, 4th, 5th)
+    other_prizes = {
+        "Second Prize": "lotto__number--p2nd",
+        "Third Prize": "lotto__number--p3rd",
+        "Fourth Prize": "lotto__number--p4th",
+        "Fifth Prize": "lotto__number--p5th"
+    }
 
-    # 🔴 Last 3 digits
-    for tag in soup.find_all(string=re.compile("3 ตัวหลัง")):
-        parent = tag.find_parent()
-        nums = clean_number(parent.get_text())
-        for n in nums:
-            results.append({
-                "date": date,
-                "ticket_no": n,
-                "prize_name": "Last 3 digits"
-            })
+    for name, cls in other_prizes.items():
+        tags = soup.find_all("span", class_=cls)
+        for tag in tags:
+            ticket_no = tag.get_text(strip=True)
+            if ticket_no:
+                prizes_data.append({
+                    "date": formatted_date,
+                    "ticket_no": ticket_no,
+                    "prize_name": name
+                })
 
-    # 🔴 Last 2 digits
-    for tag in soup.find_all(string=re.compile("2 ตัว")):
-        parent = tag.find_parent()
-        nums = clean_number(parent.get_text())
-        for n in nums:
-            results.append({
-                "date": date,
-                "ticket_no": n,
-                "prize_name": "Last 2 digits"
-            })
-
-    # 🔴 Consolation Prize
-    for tag in soup.find_all(string=re.compile("ข้างเคียง")):
-        parent = tag.find_parent()
-        nums = clean_number(parent.get_text())
-        for n in nums:
-            results.append({
-                "date": date,
-                "ticket_no": n,
-                "prize_name": "Consolation Prize"
-            })
-
-    return results
-
+    return prizes_data
 
 def scrape():
     all_results = []
     links = get_links()
-
-    print(f"Total links: {len(links)}")
+    print(f"Found {len(links)} links. Starting extraction...")
 
     for i, link in enumerate(links):
         try:
             data = parse_detail(link)
-            all_results.extend(data)
-
-            print(f"[{i+1}/{len(links)}] done")
-            time.sleep(1)
-
+            all_results.extend(data) # Flatten list
+            print(f"[{i+1}/{len(links)}] Scraped: {link}")
+            time.sleep(1) # Site block မဖြစ်အောင် ခေတ္တနားခြင်း
         except Exception as e:
-            print("Error:", e)
+            print(f"Error on {link}: {e}")
 
     with open("lotto.json", "w", encoding="utf-8") as f:
         json.dump(all_results, f, ensure_ascii=False, indent=2)
-
-    print("Saved lotto.json")
-
+    
+    print("Done! Data saved to lotto.json")
 
 if __name__ == "__main__":
     scrape()
+    
