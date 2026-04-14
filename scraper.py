@@ -55,7 +55,7 @@ def fetch_and_sync():
     all_raw_data = []
     
     # Page 1 မှ 5 အထိ (အကုန်လိုချင်ရင် range ကို တိုးနိုင်ပါတယ်)
-    for page in range(1, 6):
+    for page in range(1, 100):
         print(f"📡 Fetching page {page}...")
         try:
             res = requests.get(f"{BASE_LIST}{page}", timeout=20)
