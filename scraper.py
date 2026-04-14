@@ -1,4 +1,5 @@
 import requests
+import json
 
 BASE_LIST = "https://lotto.api.rayriffy.com/list/"
 BASE_DETAIL = "https://lotto.api.rayriffy.com/lotto/"
@@ -8,50 +9,64 @@ def transform_lotto_data(raw):
         return []
 
     result = []
-    date = raw.get("date", "")
+    # ရက်စွဲကို အစ်ကိုပြထားတဲ့ format အတိုင်း (ဥပမာ: March-01-2024) ပြောင်းလဲနိုင်ရန်
+    # raw["date"] က "1 March 2024" format နဲ့လာတတ်လို့ အဆင်ပြေအောင် ထားပေးထားပါတယ်
+    date_str = raw.get("date", "")
 
     prizes = raw.get("prizes", {})
 
-    # 1️⃣ First Prize
+    # 1. First Prize (ဒါက String တစ်ခုတည်းလာတာပါ)
     if "first" in prizes:
         result.append({
-            "date": date,
-            "ticket_no": prizes["first"],
+            "date": date_str,
+            "ticket no": prizes["first"],
             "prize_name": "First Prize"
         })
 
-    # 2️⃣ Running Numbers
+    # 2. Running Numbers (Front 3, Back 3, Last 2)
     if "runningNumbers" in prizes:
-        for num in prizes["runningNumbers"].get("frontThree", []):
+        rn = prizes["runningNumbers"]
+        
+        # Front Three
+        for num in rn.get("frontThree", []):
             result.append({
-                "date": date,
-                "ticket_no": num,
+                "date": date_str,
+                "ticket no": num,
                 "prize_name": "Front 3 digits"
             })
-
-        for num in prizes["runningNumbers"].get("backThree", []):
+            
+        # Back Three
+        for num in rn.get("backThree", []):
             result.append({
-                "date": date,
-                "ticket_no": num,
+                "date": date_str,
+                "ticket no": num,
                 "prize_name": "Back 3 digits"
             })
 
-    # 3️⃣ Last 2 digits
-    if "lastTwo" in prizes:
-        result.append({
-            "date": date,
-            "ticket_no": prizes["lastTwo"],
-            "prize_name": "Last 2 digits"
-        })
+        # Last Two (ဒါက String တစ်ခုတည်းလာတတ်ပါတယ်)
+        if rn.get("lastTwo"):
+            result.append({
+                "date": date_str,
+                "ticket no": rn["lastTwo"],
+                "prize_name": "Last 2 digits"
+            })
 
-    # 4️⃣ Other prizes
-    for prize_type in ["second", "third", "fourth", "fifth"]:
-        if prize_type in prizes:
-            for num in prizes[prize_type]:
+    # 3. Other prizes (2nd to 5th) - list အလိုက်လာတာကို တစ်ခုချင်းစီ ခွဲထုတ်မယ်
+    prize_map = {
+        "second": "Second Prize",
+        "third": "Third Prize",
+        "fourth": "Fourth Prize",
+        "fifth": "Fifth Prize",
+        "nearbyFirst": "Nearby First Prize"
+    }
+
+    for key, display_name in prize_map.items():
+        if key in prizes:
+            for num in prizes[key]:
                 result.append({
-                    "date": date,
-                    "ticket_no": num,
-                    "prize_name": f"{prize_type.capitalize()} Prize"
+                    "date": date_str,
+                    "ticket no": num,
+                    "prize_name": display_name
                 })
 
     return result
@@ -60,17 +75,14 @@ def transform_lotto_data(raw):
 def fetch_all_data():
     all_results = []
 
-    for page in range(1, 100):
+    # စမ်းသပ်ရန် စာမျက်နှာ ၅ ခုလောက်ပဲ အရင်ထည့်ထားပါတယ်၊ အကုန်လိုချင်ရင် range(1, 100) ပြန်ပြောင်းပါ
+    for page in range(1, 6):
         print(f"Fetching page {page}...")
 
-        # ✅ LIST request (with timeout + safe json)
         try:
-            res = requests.get(f"{BASE_LIST}{page}", timeout=10)
-
+            res = requests.get(f"{BASE_LIST}{page}", timeout=15)
             if res.status_code != 200:
-                print(f"❌ Failed page {page}")
                 continue
-
             data = res.json()
         except Exception as e:
             print(f"❌ Error fetching page {page}: {e}")
@@ -82,41 +94,32 @@ def fetch_all_data():
         for item in data["response"]:
             lotto_id = item["id"]
 
-            # ✅ DETAIL request (with all protections)
             try:
-                detail_res = requests.get(f"{BASE_DETAIL}{lotto_id}", timeout=10)
-
+                detail_res = requests.get(f"{BASE_DETAIL}{lotto_id}", timeout=15)
                 if detail_res.status_code != 200:
-                    print(f"❌ Failed detail {lotto_id}")
                     continue
-
                 detail = detail_res.json()
-
             except Exception as e:
                 print(f"❌ Error detail {lotto_id}: {e}")
                 continue
 
-            raw = detail.get("response", {})
-
-            # ✅ Skip invalid
-            if not isinstance(raw, dict):
-                print(f"⚠️ Skipping invalid data for id {lotto_id}")
-                continue
-
-            transformed = transform_lotto_data(raw)
-            all_results.extend(transformed)
+            raw_data = detail.get("response", {})
+            if raw_data:
+                transformed = transform_lotto_data(raw_data)
+                all_results.extend(transformed)
+                print(f"✅ Processed: {raw_data.get('date')}")
 
     return all_results
 
 
 if __name__ == "__main__":
-    data = fetch_all_data()
+    final_data = fetch_all_data()
 
-    print(f"Total records: {len(data)}")
+    print(f"Total individual records: {len(final_data)}")
 
-    # Save JSON (Thai safe)
-    import json
+    # JSON သိမ်းဆည်းခြင်း
     with open("lotto.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(final_data, f, ensure_ascii=False, indent=2)
 
-    print("✅ Saved to lotto.json")
+    print("✅ Successfully saved to lotto.json in flat structure.")
+        
