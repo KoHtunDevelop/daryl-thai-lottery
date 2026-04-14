@@ -27,3 +27,6 @@ jobs:
           git add lotto.json
           git commit -m "update lotto data" || echo "no changes"
           git push
+      - name: Create Firebase key file
+        run: |
+         echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
