@@ -4,14 +4,19 @@ from bs4 import BeautifulSoup
 import firebase_admin
 from firebase_admin import credentials, firestore
 import time
+import json
+import os
 
 # =========================
 # 🔥 Firebase INIT
 # =========================
 try:
+    print("🔥 Checking firebase_key.json ...", os.path.exists("firebase_key.json"))
+
     cred = credentials.Certificate("firebase_key.json")
     firebase_admin.initialize_app(cred)
     print("✅ Firebase initialized")
+
 except Exception as e:
     print("❌ Firebase init error:", e)
 
@@ -29,7 +34,6 @@ try:
 except Exception as e:
     print("❌ Firestore WRITE FAILED:", e)
 
-
 BASE_URL = "https://news.sanook.com"
 
 HEADERS = {
@@ -41,7 +45,9 @@ HEADERS = {
 # =========================
 def parse_date(title):
     match = re.search(r"(\d{1,2})\s(.+?)\s(\d{4})", title)
+
     if not match:
+        print("❌ Date regex fail:", title)
         return None
 
     day = match.group(1)
@@ -63,11 +69,13 @@ def parse_date(title):
         "ธันวาคม": "12"
     }
 
-    year = int(year_th) - 543
     month = months.get(month_th)
 
     if not month:
+        print("❌ Month parse fail:", month_th)
         return None
+
+    year = int(year_th) - 543
 
     return f"{year}-{month}-{int(day):02d}"
 
@@ -76,17 +84,26 @@ def parse_date(title):
 # 🧾 Parse Detail Page
 # =========================
 def parse_detail(url):
-    res = requests.get(url, headers=HEADERS)
-    soup = BeautifulSoup(res.text, "html.parser")
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=10)
 
-    title = soup.title.text if soup.title else ""
-    date = parse_date(title)
+        if res.status_code != 200:
+            print(f"❌ HTTP {res.status_code}:", url)
+            return None
 
-    prizes = {}
+        soup = BeautifulSoup(res.text, "html.parser")
 
-    table = soup.find("table")
+        title = soup.title.text if soup.title else ""
+        date = parse_date(title)
 
-    if table:
+        prizes = {}
+
+        table = soup.find("table")
+
+        if not table:
+            print("❌ No table found:", url)
+            return None
+
         rows = table.find_all("tr")
 
         for row in rows:
@@ -101,55 +118,88 @@ def parse_detail(url):
                 if nums:
                     prizes[prize_name] = nums
 
-    if not date or not prizes:
-        print(f"⚠️ Skip invalid data: {url}")
-        return None
+        # 🔥 DEBUG
+        print("📊 Parsed:", url)
+        print("   Date:", date)
+        print("   Prizes count:", len(prizes))
 
-    return {
-        "date": date,
-        "prizes": prizes,
-        "url": url
-    }
+        if not date or not prizes:
+            print(f"⚠️ Skip invalid data: {url}")
+            return None
+
+        data = {
+            "date": date,
+            "prizes": prizes,
+            "url": url
+        }
+
+        # 🔥 sanitize for Firestore
+        data = json.loads(json.dumps(data))
+
+        return data
+
+    except Exception as e:
+        print("❌ parse_detail error:", e)
+        return None
 
 
 # =========================
-# 🔗 Get Links (Latest + History)
+# 🔗 Get Links
 # =========================
 def get_links():
     links = []
 
-    for page in range(1, 6):  # 🔥 increase pages for history
+    for page in range(1, 6):
         url = f"{BASE_URL}/lotto/archive/page/{page}/"
-        res = requests.get(url, headers=HEADERS)
-        soup = BeautifulSoup(res.text, "html.parser")
 
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            text = a.get_text(strip=True)
+        try:
+            res = requests.get(url, headers=HEADERS, timeout=10)
 
-            if "/lotto/check/" in href and "ตรวจหวย" in text:
-                links.append(href)
+            if res.status_code != 200:
+                print("❌ Page error:", url)
+                continue
 
-        print(f"📄 Page {page} scanned")
+            soup = BeautifulSoup(res.text, "html.parser")
 
-    return list(set(links))
+            for a in soup.find_all("a", href=True):
+                href = a["href"]
+                text = a.get_text(strip=True)
+
+                if "/lotto/check/" in href and "ตรวจหวย" in text:
+                    links.append(href)
+
+            print(f"📄 Page {page} scanned")
+
+        except Exception as e:
+            print("❌ get_links error:", e)
+
+    unique_links = list(set(links))
+    print("🔗 Unique links:", len(unique_links))
+
+    return unique_links
 
 
 # =========================
 # ☁️ Upload to Firestore
 # =========================
 def upload_to_firestore(data):
+    if not data or "date" not in data:
+        print("❌ Invalid data:", data)
+        return
+
     date = data["date"]
 
     try:
         doc_ref = db.collection("lotto").document(date)
 
-        # 🔥 Skip duplicate
-        if doc_ref.get().exists:
+        # 🔥 check existing
+        doc = doc_ref.get()
+
+        if doc.exists:
             print(f"⏩ Skip duplicate: {date}")
             return
 
-        doc_ref.set(data)
+        doc_ref.set(data, merge=True)
 
         print(f"✅ Uploaded: {date}")
 
@@ -164,22 +214,27 @@ def main():
     print("🚀 START SCRAPER")
 
     links = get_links()
-    print(f"🔗 Total links: {len(links)}")
+
+    if not links:
+        print("❌ No links found — scraper broken")
+        return
+
+    success = 0
 
     for i, link in enumerate(links):
-        try:
-            print(f"[{i+1}] Processing: {link}")
+        print(f"[{i+1}/{len(links)}] Processing:", link)
 
-            data = parse_detail(link)
+        data = parse_detail(link)
 
-            if data:
-                upload_to_firestore(data)
+        if data:
+            upload_to_firestore(data)
+            success += 1
+        else:
+            print("⚠️ No data extracted")
 
-            time.sleep(1)
+        time.sleep(1)
 
-        except Exception as e:
-            print("❌ Error:", e)
-
+    print("🔥 TOTAL SUCCESS:", success)
     print("✅ DONE")
 
 
