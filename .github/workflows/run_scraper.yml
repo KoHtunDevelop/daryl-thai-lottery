@@ -30,7 +30,7 @@ jobs:
       - name: Commit and Push Changes
         run: |
   
-          git config --global user."KoHtunDevelop"
+          git config --global user.name "KoHtunDevelop"
           git config --global user.email "kohtundevelop@gmail.com"
           git add lotto.json
           git commit -m "Update lotto data: $(date)" || echo "No changes to commit"
