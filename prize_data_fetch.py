@@ -13,15 +13,15 @@ except Exception as e:
 
 def upload_prize_data():
     prizes = [
-        {"name": "First Prize", "count": 1, "reward": 6 000 000},
-        {"name": "The last two digits", "count": 10000, "reward": 2 000},
-        {"name": "The last three digits", "count": 2000, "reward": 4 000},
-        {"name": "The first three digits", "count": 2000, "reward": 4 000},
-        {"name": "Second Prize", "count": 5, "reward": 200 000},
-        {"name": "Third Prize", "count": 10, "reward": 80 000},
-        {"name": "Fourth Prize", "count": 50, "reward": 40 000},
-        {"name": "Fifth Prize", "count": 100, "reward": 20 000},
-        {"name": "Consolation prize for the first prize", "count": 2, "reward": 100 000}
+        {"name": "First Prize", "count": 1, "reward": 6000000},
+        {"name": "The last two digits", "count": 10000, "reward": 2000},
+        {"name": "The last three digits", "count": 2000, "reward": 4000},
+        {"name": "The first three digits", "count": 2000, "reward": 4000},
+        {"name": "Second Prize", "count": 5, "reward": 200000},
+        {"name": "Third Prize", "count": 10, "reward": 80000},
+        {"name": "Fourth Prize", "count": 50, "reward": 40000},
+        {"name": "Fifth Prize", "count": 100, "reward": 20000},
+        {"name": "Consolation prize for the first prize", "count": 2, "reward": 100000}
     ]
 
 
