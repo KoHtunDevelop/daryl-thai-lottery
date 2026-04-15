@@ -1,0 +1,39 @@
+import json
+import firebase_admin
+from firebase_admin import credentials, db
+
+try:
+    cred = credentials.Certificate("firebase_key.json")
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://daryl-a101e-default-rtdb.asia-southeast1.firebasedatabase.app/'
+    }, name='prize_app')
+    print("✅ RTDB Connected!")
+except Exception as e:
+    print(f"❌ RTDB Init Error: {e}")
+
+def upload_prize_data():
+    prizes = [
+        {"name": "First Prize", "count": 1, "reward": 6 000 000},
+        {"name": "The last two digits", "count": 10000, "reward": 2 000},
+        {"name": "The last three digits", "count": 2000, "reward": 4 000},
+        {"name": "The first three digits", "count": 2000, "reward": 4 000},
+        {"name": "Second Prize", "count": 5, "reward": 200 000},
+        {"name": "Third Prize", "count": 10, "reward": 80 000},
+        {"name": "Fourth Prize", "count": 50, "reward": 40 000},
+        {"name": "Fifth Prize", "count": 100, "reward": 20 000},
+        {"name": "Special Prize (±1)", "count": 2, "reward": 100 000}
+    ]
+
+
+    with open("lottery_prize_info.json", "w", encoding="utf-8") as f:
+        json.dump(prizes, f, indent=2)
+
+    try:
+        ref = db.reference('prize_details', app=firebase_admin.get_app('prize_app'))
+        ref.set(prizes)
+        print("🚀 Prize Info synced to Realtime Database!")
+    except Exception as e:
+        print(f"❌ Upload failed: {e}")
+
+if __name__ == "__main__":
+    upload_prize_data()
