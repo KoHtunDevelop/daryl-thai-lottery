@@ -1,4 +1,4 @@
-name: Lotto Scraper
+Name: Lottery Data Updater
 
 on:
   workflow_dispatch:
@@ -25,14 +25,13 @@ jobs:
           echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
 
       - name: Run Scraper
-        run: python scraper.py
+        run: python lottery_data_fetch.py
 
       - name: Commit and Push Changes
         run: |
-  
           git config --global user.name "KoHtunDevelop"
           git config --global user.email "kohtundevelop@gmail.com"
-          git add lotto.json
+          git add lottery_data_update.json
           git commit -m "Update lotto data: $(date)" || echo "No changes to commit"
           git push
           
