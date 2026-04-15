@@ -25,7 +25,7 @@ def upload_prize_data():
     ]
 
 
-    with open("lottery_prize_info.json", "w", encoding="utf-8") as f:
+    with open("prize_data_update.json", "w", encoding="utf-8") as f:
         json.dump(prizes, f, indent=2)
 
     try:
