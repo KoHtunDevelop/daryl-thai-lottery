@@ -21,7 +21,7 @@ def upload_prize_data():
         {"name": "Third Prize", "count": 10, "reward": 80 000},
         {"name": "Fourth Prize", "count": 50, "reward": 40 000},
         {"name": "Fifth Prize", "count": 100, "reward": 20 000},
-        {"name": "Special Prize (±1)", "count": 2, "reward": 100 000}
+        {"name": "Consolation prize for the first prize", "count": 2, "reward": 100 000}
     ]
 
 
