@@ -1,11 +1,47 @@
 [
-  { "prize_name": "First Prize", "number_of_prizes": 1, "payout_baht": 6000000 },
-  { "prize_name": "The last two digits", "number_of_prizes": 10000, "payout_baht": 2000 },
-  { "prize_name": "The last three digits", "number_of_prizes": 2000, "payout_baht": 4000 },
-  { "prize_name": "The first three digits", "number_of_prizes": 2000, "payout_baht": 4000 },
-  { "prize_name": "Second Prize", "number_of_prizes": 5, "payout_baht": 200000 },
-  { "prize_name": "Third Prize", "number_of_prizes": 10, "payout_baht": 80000 },
-  { "prize_name": "Fourth Prize", "number_of_prizes": 50, "payout_baht": 40000 },
-  { "prize_name": "Fifth Prize", "number_of_prizes": 100, "payout_baht": 20000 },
-  { "prize_name": "Consolation prize for the first prize", "number_of_prizes": 2, "payout_baht": 100000 }
+  {
+    "name": "First Prize",
+    "count": 1,
+    "reward": 6000000
+  },
+  {
+    "name": "The last two digits",
+    "count": 10000,
+    "reward": 2000
+  },
+  {
+    "name": "The last three digits",
+    "count": 2000,
+    "reward": 4000
+  },
+  {
+    "name": "The first three digits",
+    "count": 2000,
+    "reward": 4000
+  },
+  {
+    "name": "Second Prize",
+    "count": 5,
+    "reward": 200000
+  },
+  {
+    "name": "Third Prize",
+    "count": 10,
+    "reward": 80000
+  },
+  {
+    "name": "Fourth Prize",
+    "count": 50,
+    "reward": 40000
+  },
+  {
+    "name": "Fifth Prize",
+    "count": 100,
+    "reward": 20000
+  },
+  {
+    "name": "Consolation prize for the first prize",
+    "count": 2,
+    "reward": 100000
+  }
 ]
