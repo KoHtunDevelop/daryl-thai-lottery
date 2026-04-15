@@ -1,0 +1,11 @@
+[
+  { "prize_name": "The First Prize", "number_of_prizes": 1, "payout_baht": 6000000 },
+  { "prize_name": "The last two digits", "number_of_prizes": 10000, "payout_baht": 2000 },
+  { "prize_name": "The last three digits", "number_of_prizes": 2000, "payout_baht": 4000 },
+  { "prize_name": "The first three digits", "number_of_prizes": 2000, "payout_baht": 4000 },
+  { "prize_name": "The Second Prize", "number_of_prizes": 5, "payout_baht": 200000 },
+  { "prize_name": "The Third Prize", "number_of_prizes": 10, "payout_baht": 80000 },
+  { "prize_name": "The Fourth Prize", "number_of_prizes": 50, "payout_baht": 40000 },
+  { "prize_name": "The Fifth Prize", "number_of_prizes": 100, "payout_baht": 20000 },
+  { "prize_name": "The Special Prize (±1)", "number_of_prizes": 2, "payout_baht": 100000 }
+]
