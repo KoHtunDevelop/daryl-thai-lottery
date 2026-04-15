@@ -29,7 +29,7 @@ def upload_prize_data():
         json.dump(prizes, f, indent=2)
 
     try:
-        ref = db.reference('prize_details', app=firebase_admin.get_app('prize_app'))
+        ref = db.reference('prize_data_update', app=firebase_admin.get_app('prize_app'))
         ref.set(prizes)
         print("🚀 Prize Info synced to Realtime Database!")
     except Exception as e:
