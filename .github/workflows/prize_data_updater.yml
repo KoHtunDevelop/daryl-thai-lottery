@@ -20,7 +20,7 @@ jobs:
         run: |
           git config --global user.name "KoHtunDevelop"
           git config --global user.email "kohtundevelop@gmail.com"
-          git add prize_info.json
+          git add prize_data_update.json
           git commit -m "Update Prize JSON" || echo "No changes"
           git push
           
