@@ -1,0 +1,26 @@
+name: Prize Data Updater
+on:
+  workflow_dispatch:
+jobs:
+  run-prizes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install
+        run: pip install firebase-admin
+      - name: Key
+        run: echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
+      - name: Run
+        run: python prize_data_fetch.py
+      - name: Push JSON
+        run: |
+          git config --global user.name "KoHtunDevelop"
+          git config --global user.email "kohtundevelop@gmail.com"
+          git add prize_info.json
+          git commit -m "Update Prize JSON" || echo "No changes"
+          git push
+          
