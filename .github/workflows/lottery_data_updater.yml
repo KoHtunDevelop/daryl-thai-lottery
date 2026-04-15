@@ -1,0 +1,37 @@
+name: Lottery Data Updater
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create Firebase key file
+        run: |
+          echo '${{ secrets.FIREBASE_KEY }}' > firebase_key.json
+
+      - name: Run Scraper
+        run: python lottery_data_fetch.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "KoHtunDevelop"
+          git config --global user.email "kohtundevelop@gmail.com"
+          git add lottery_data_update.json
+          git commit -m "Update lotto data: $(date)" || echo "No changes to commit"
+          git push
+          
