@@ -3,7 +3,9 @@ name: Lottery Data Updater
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "30 9 * * *"
+    
+    - cron: "30 22 * * *"
 
 jobs:
   scrape:
