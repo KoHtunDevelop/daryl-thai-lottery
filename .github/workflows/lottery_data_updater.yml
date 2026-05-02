@@ -4,15 +4,21 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "30 9 * * *"
-    
     - cron: "30 22 * * *"
+
+# 🔐 IMPORTANT: add permissions for public repo
+permissions:
+  contents: write
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true   # ensure push works
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -36,4 +42,3 @@ jobs:
           git add lottery_data_update.json
           git commit -m "Update lotto data: $(date)" || echo "No changes to commit"
           git push
-          
